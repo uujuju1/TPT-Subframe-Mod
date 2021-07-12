@@ -14,6 +14,8 @@ public:
 	void Debug(int mode, int x, int y);
 	bool KeyPress(int key, int scan, bool shift, bool ctrl, bool alt, ui::Point currentMouse) override;
 	virtual ~ParticleDebug();
+private:
+	void updateSimUpTo(int i);
 };
 
 #endif
