@@ -3460,6 +3460,16 @@ void Simulation::delete_part(int x, int y)//calls kill_part with the particle lo
 	kill_part(ID(i));
 }
 
+void Simulation::CompleteDebugUpdateParticles()
+{
+	if(debug_currentParticle > 0)
+	{
+		UpdateParticles(debug_currentParticle, NPART);
+		AfterSim();
+		debug_currentParticle = 0;
+	}
+}
+
 void Simulation::UpdateParticles(int start, int end)
 {
 	int i, j, x, y, t, nx, ny, r, surround_space, s, rt, nt;
@@ -5299,6 +5309,7 @@ Simulation::Simulation():
 	legacy_enable(0),
 	aheat_enable(0),
 	water_equal_test(0),
+	subframe_mode(false),
 	sys_pause(0),
 	framerender(0),
 	pretty_powder(0),

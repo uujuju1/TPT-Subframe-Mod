@@ -926,6 +926,15 @@ void GameController::Update()
 	{
 		sim->UpdateParticles(0, NPART);
 		sim->AfterSim();
+		sim->subframe_mode = false;
+	}
+	if (sim->subframe_mode)
+	{
+		for (std::vector<DebugInfo*>::iterator iter = debugInfo.begin(), end = debugInfo.end(); iter != end; iter++)
+		{
+			if ((*iter)->debugID == 0x8)
+				((ParticleDebug*)*iter)->Debug(0xf, 0, 0);
+		}
 	}
 
 	//if either STKM or STK2 isn't out, reset it's selected element. Defaults to PT_DUST unless right selected is something else
@@ -1016,6 +1025,16 @@ void GameController::SetPaused(bool pauseState)
 void GameController::SetPaused()
 {
 	gameModel->SetPaused(!gameModel->GetPaused());
+}
+
+void GameController::SetSubframeMode(bool subframeModeState)
+{
+	gameModel->SetSubframeMode(subframeModeState);
+}
+
+void GameController::SetSubframeMode()
+{
+	gameModel->SetSubframeMode(!gameModel->GetSubframeMode());
 }
 
 void GameController::SetDecoration(bool decorationState)

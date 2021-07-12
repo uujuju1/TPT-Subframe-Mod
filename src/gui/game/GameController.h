@@ -100,6 +100,8 @@ public:
 	void Update();
 	void SetPaused(bool pauseState);
 	void SetPaused();
+	void SetSubframeMode(bool subframeModeState);
+	void SetSubframeMode();
 	void SetDecoration(bool decorationState);
 	void SetDecoration();
 	void ShowGravityGrid();
@@ -109,6 +111,7 @@ public:
 	bool GetBrushEnable();
 	void SetDebugHUD(bool hudState);
 	bool GetDebugHUD();
+	bool GetParticleDebugEnabled() { return debugFlags & 0x8; }
 	void SetDebugFlags(unsigned int flags) { debugFlags = flags; }
 	void SetActiveMenu(int menuID);
 	std::vector<Menu*> GetMenuList();

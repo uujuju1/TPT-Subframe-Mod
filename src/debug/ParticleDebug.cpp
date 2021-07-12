@@ -36,7 +36,7 @@ void ParticleDebug::Debug(int mode, int x, int y)
 	int i = 0;
 	String logmessage;
 
-	if (mode == 0)
+	if (mode == 0 || mode == 0xf)
 	{
 		if (!sim->NUM_PARTS)
 			return;
@@ -52,9 +52,15 @@ void ParticleDebug::Debug(int mode, int x, int y)
 		while(i < NPART && !sim->debug_interestingChangeOccurred);
 
 		if (i == NPART)
+		{
 			logmessage = "End of particles reached, updated sim";
-		else
+			model->Log(logmessage, false);
+		}
+		else if (mode != 0xf)
+		{
 			logmessage = String::Build("Updated particles #", debug_currentParticle, " through #", i);
+			model->Log(logmessage, false);
+		}
 	}
 	else if (mode == 1)
 	{
@@ -66,9 +72,14 @@ void ParticleDebug::Debug(int mode, int x, int y)
 		else
 			logmessage = String::Build("Updated particles #", debug_currentParticle, " through #", i);
 
+		model->Log(logmessage, false);
+
 		updateSimUpTo(i);
 	}
-	model->Log(logmessage, false);
+	else
+	{
+		printf("BUG: SetDebug called with unknown mode");
+	}
 }
 
 bool ParticleDebug::KeyPress(int key, int scan, bool shift, bool ctrl, bool alt, ui::Point currentMouse)
@@ -101,11 +112,9 @@ bool ParticleDebug::KeyPress(int key, int scan, bool shift, bool ctrl, bool alt,
 				return true;
 			if (sim->debug_currentParticle > 0)
 			{
-				sim->UpdateParticles(sim->debug_currentParticle, NPART);
-				sim->AfterSim();
 				String logmessage = String::Build("Updated particles from #", sim->debug_currentParticle, " to end, updated sim");
+				sim->CompleteDebugUpdateParticles();
 				model->Log(logmessage, false);
-				sim->debug_currentParticle = 0;
 			}
 			else
 			{

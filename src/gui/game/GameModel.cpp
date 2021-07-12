@@ -1030,15 +1030,18 @@ void GameModel::SetUser(User user)
 
 void GameModel::SetPaused(bool pauseState)
 {
-	if (!pauseState && sim->debug_currentParticle > 0)
+	if (!pauseState)
 	{
-		String logmessage = String::Build("Updated particles from #", sim->debug_currentParticle, " to end due to unpause");
-		sim->UpdateParticles(sim->debug_currentParticle, NPART);
-		sim->AfterSim();
-		sim->debug_currentParticle = 0;
-		Log(logmessage, false);
+		if (sim->debug_currentParticle > 0)
+		{
+			String logmessage = String::Build("Updated particles from #", sim->debug_currentParticle, " to end due to unpause");
+			Log(logmessage, false);
+
+			sim->CompleteDebugUpdateParticles();
+		}
 	}
 
+	sim->subframe_mode = false;
 	sim->sys_pause = pauseState?1:0;
 	notifyPausedChanged();
 }
@@ -1046,6 +1049,20 @@ void GameModel::SetPaused(bool pauseState)
 bool GameModel::GetPaused()
 {
 	return sim->sys_pause?true:false;
+}
+
+bool GameModel::GetSubframeMode()
+{
+	return sim->subframe_mode;
+}
+
+void GameModel::SetSubframeMode(bool subframeModeState)
+{
+	if (subframeModeState && !GetPaused())
+		SetPaused(true);
+
+	sim->subframe_mode = subframeModeState;
+	notifyPausedChanged();
 }
 
 void GameModel::SetDecoration(bool decorationState)
