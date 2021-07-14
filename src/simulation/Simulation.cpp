@@ -326,28 +326,7 @@ int Simulation::Load(GameSave * save, bool includePressure, int fullX, int fullY
 	force_stacking_check = true;
 	Element_PPIP_ppip_changed = 1;
 
-	// fix SOAP links using soapList, a map of old particle ID -> new particle ID
-	// loop through every old particle (loaded from save), and convert .tmp / .tmp2
-	for (std::map<unsigned int, unsigned int>::iterator iter = soapList.begin(), end = soapList.end(); iter != end; ++iter)
-	{
-		int i = (*iter).second;
-		if ((parts[i].ctype & 0x2) == 2)
-		{
-			std::map<unsigned int, unsigned int>::iterator n = soapList.find(parts[i].tmp);
-			if (n != end)
-				parts[i].tmp = n->second;
-			// sometimes the proper SOAP isn't found. It should remove the link, but seems to break some saves
-			// so just ignore it
-		}
-		if ((parts[i].ctype & 0x4) == 4)
-		{
-			std::map<unsigned int, unsigned int>::iterator n = soapList.find(parts[i].tmp2);
-			if (n != end)
-				parts[i].tmp2 = n->second;
-			// sometimes the proper SOAP isn't found. It should remove the link, but seems to break some saves
-			// so just ignore it
-		}
-	}
+	FixSoapLinks(soapList);
 
 	for (size_t i = 0; i < save->signs.size() && signs.size() < MAXSIGNS; i++)
 	{
@@ -4840,6 +4819,77 @@ void Simulation::RecalcFreeParticles(bool do_life_dec)
 	parts_lastActiveIndex = lastPartUsed;
 	if (elementRecount)
 		elementRecount = false;
+}
+
+void Simulation::FixSoapLinks(std::map<unsigned int, unsigned int> &soapList)
+{
+	// fix SOAP links using soapList, a map of old particle ID -> new particle ID
+	// loop through every old particle (loaded from save), and convert .tmp / .tmp2
+	for (std::map<unsigned int, unsigned int>::iterator iter = soapList.begin(), end = soapList.end(); iter != end; ++iter)
+	{
+		int i = (*iter).second;
+		if ((parts[i].ctype & 0x2) == 2)
+		{
+			std::map<unsigned int, unsigned int>::iterator n = soapList.find(parts[i].tmp);
+			if (n != end)
+				parts[i].tmp = n->second;
+			// sometimes the proper SOAP isn't found. It should remove the link, but seems to break some saves
+			// so just ignore it
+		}
+		if ((parts[i].ctype & 0x4) == 4)
+		{
+			std::map<unsigned int, unsigned int>::iterator n = soapList.find(parts[i].tmp2);
+			if (n != end)
+				parts[i].tmp2 = n->second;
+			// sometimes the proper SOAP isn't found. It should remove the link, but seems to break some saves
+			// so just ignore it
+		}
+	}
+}
+
+void Simulation::ReloadParticleOrder()
+{
+	CompleteDebugUpdateParticles();
+	// use pmap_count as count buffer
+	memset(pmap_count, 0, sizeof(pmap_count));
+	memset(stackReorderParts, 0, sizeof(stackReorderParts));
+	for (int i = 0; i <= parts_lastActiveIndex; i++)
+	{
+		if (!parts[i].type)
+			continue;
+		int partx = (int)(parts[i].x+0.5f);
+		int party = (int)(parts[i].y+0.5f);
+		if (partx<CELL || partx>=XRES-CELL || party<CELL || party>=YRES-CELL)
+			kill_part(i);
+		pmap_count[party][partx]++;
+	}
+	int runningCount = 0;
+	for (int y = 0; y < YRES; y++)
+	{
+		for (int x = 0; x < XRES; x++)
+		{
+			int startId = runningCount;
+			runningCount += pmap_count[y][x];
+			pmap_count[y][x] = startId;
+		}
+	}
+	std::map<unsigned int, unsigned int> soapList;
+	for (int i = 0; i <= parts_lastActiveIndex; i++)
+	{
+		if (!parts[i].type)
+			continue;
+		int partx = (int)(parts[i].x+0.5f);
+		int party = (int)(parts[i].y+0.5f);
+		int newId = pmap_count[party][partx];
+		pmap_count[party][partx] = newId + 1;
+		stackReorderParts[newId] = parts[i];
+		if (parts[i].type == PT_SOAP)
+			soapList.insert(std::pair<unsigned int, unsigned int>(i, newId));
+	}
+	memcpy(parts, stackReorderParts, sizeof(parts));
+	FixSoapLinks(soapList);
+	parts_lastActiveIndex = NPART-1;
+	RecalcFreeParticles(false);
 }
 
 void Simulation::SimulateGoL()

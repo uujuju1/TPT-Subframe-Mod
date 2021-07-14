@@ -146,6 +146,7 @@ public:
 	void PlaceSave(ui::Point position);
 	void ClearSim();
 	void ReloadSim();
+	void ReloadParticleOrder();
 	void Vote(int direction);
 	void ChangeBrush();
 	void ShowConsole();
