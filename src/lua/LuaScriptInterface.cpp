@@ -211,6 +211,7 @@ LuaScriptInterface::LuaScriptInterface(GameController * c, GameModel * m):
 		{"watertest",&luatpt_togglewater},
 		{"screenshot",&luatpt_screenshot},
 		{"record",&luatpt_record},
+		{"record_subframe",&luatpt_record_subframe},
 		{"element",&luatpt_getelement},
 		{"element_func",&luatpt_element_func},
 		{"graphics_func",&luatpt_graphics_func},

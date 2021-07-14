@@ -194,6 +194,8 @@ public:
 	void SetActiveMenu(int menuID);
 	int GetActiveMenu();
 	void FrameStep(int frames);
+	void SetSubframeFrameStep(int frames);
+	int GetSubframeFrameStep();
 	User GetUser();
 	void SetUser(User user);
 	Simulation * GetSimulation();
