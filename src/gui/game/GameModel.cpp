@@ -843,6 +843,11 @@ void GameModel::SetSaveFile(SaveFile * newSave, bool invertIncludePressure)
 	UpdateQuickOptions();
 }
 
+bool GameModel::AreParticlesInSubframeOrder()
+{
+	return sim->AreParticlesInSubframeOrder();
+}
+
 Simulation * GameModel::GetSimulation()
 {
 	return sim;

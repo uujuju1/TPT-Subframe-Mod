@@ -251,18 +251,32 @@ GameView::GameView():
 	saveSimulationButton->Appearance.HorizontalAlign = ui::Appearance::AlignLeft;
 	saveSimulationButton->SetIcon(IconSave);
 	currentX+=151;
+	auto confirmCleanState = [this](std::function<void (bool)> callback, bool isLocal) {
+		if (!c->IsFrameComplete() && !ConfirmPrompt::Blocking("Save incomplete frame", "You're in the middle of a frame. Are you sure you want to save?"))
+				return;
+		c->ReloadParticleOrderIfNeeded();
+		if (!c->AreParticlesInSubframeOrder() && !ConfirmPrompt::Blocking("Particles not in order", "The particles are not in subframe order. Are you sure you want to save?"))
+				return;
+		callback(isLocal);
+	};
 	saveSimulationButton->SetSplitActionCallback({
-		[this] {
-			if (CtrlBehaviour() || !Client::Ref().GetAuthUser().UserID)
-				c->OpenLocalSaveWindow(true);
-			else
-				c->SaveAsCurrent();
+		[this, confirmCleanState] {
+			bool isLocal = CtrlBehaviour();
+			confirmCleanState([this](bool isLocal) {
+				if (isLocal || !Client::Ref().GetAuthUser().UserID)
+					c->OpenLocalSaveWindow(true);
+				else
+					c->SaveAsCurrent();
+			}, isLocal);
 		},
-		[this] {
-			if (CtrlBehaviour() || !Client::Ref().GetAuthUser().UserID)
-				c->OpenLocalSaveWindow(false);
-			else
-				c->OpenSaveWindow();
+		[this, confirmCleanState] {
+			bool isLocal = CtrlBehaviour();
+			confirmCleanState([this](bool isLocal) {
+				if (isLocal || !Client::Ref().GetAuthUser().UserID)
+					c->OpenLocalSaveWindow(false);
+				else
+					c->OpenSaveWindow();
+			}, isLocal);
 		}
 	});
 	SetSaveButtonTooltips();

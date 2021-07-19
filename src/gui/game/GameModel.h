@@ -174,6 +174,7 @@ public:
 	void SetSave(SaveInfo * newSave, bool invertIncludePressure);
 	void SetSaveFile(SaveFile * newSave, bool invertIncludePressure);
 	void AddObserver(GameView * observer);
+	bool AreParticlesInSubframeOrder();
 
 	void SetPaused(bool pauseState);
 	bool GetPaused();

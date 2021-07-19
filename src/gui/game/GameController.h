@@ -153,6 +153,7 @@ public:
 	void ClearSim();
 	void ReloadSim();
 	void ReloadParticleOrder();
+	void ReloadParticleOrderIfNeeded();
 	void Vote(int direction);
 	void ChangeBrush();
 	void ShowConsole();
@@ -160,6 +161,8 @@ public:
 	void FrameStep();
 	void SubframeFrameStep();
 	bool IsSubframeFrameStepComplete();
+	bool IsFrameComplete();
+	bool AreParticlesInSubframeOrder();
 	void TranslateSave(ui::Point point);
 	void TransformSave(matrix2d transform);
 	bool MouseInZoom(ui::Point position);
