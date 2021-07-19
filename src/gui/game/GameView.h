@@ -47,6 +47,7 @@ private:
 	bool showHud;
 	bool showBrush;
 	bool showDebug;
+	int wavelengthGfxMode;
 	int delayedActiveMenu;
 	bool wallBrush;
 	bool toolBrush;
@@ -136,6 +137,8 @@ private:
 	void disableAltBehaviour();
 	void UpdateDrawMode();
 	void UpdateToolStrength();
+
+	void writeWavelength(StringBuilder *str, int wavelengthGfx);
 public:
 	GameView();
 	virtual ~GameView();

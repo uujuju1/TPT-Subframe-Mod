@@ -171,6 +171,7 @@ GameView::GameView():
 	showHud(true),
 	showBrush(true),
 	showDebug(false),
+	wavelengthGfxMode(0),
 	delayedActiveMenu(-1),
 	wallBrush(false),
 	toolBrush(false),
@@ -330,6 +331,8 @@ GameView::GameView():
 
 	colourPicker = new ui::Button(ui::Point((XRES/2)-8, YRES+1), ui::Point(16, 16), "", "Pick Colour");
 	colourPicker->SetActionCallback({ [this] { c->OpenColourPicker(); } });
+
+	wavelengthGfxMode = Client::Ref().GetPrefUInteger("Renderer.WavelengthGfxMode", 0);
 }
 
 GameView::~GameView()
@@ -1395,6 +1398,26 @@ void GameView::OnKeyPress(int key, int scan, bool repeat, bool shift, bool ctrl,
 		else
 			showHud = !showHud;
 		break;
+	case SDL_SCANCODE_J:
+		if(ctrl)
+		{
+			wavelengthGfxMode = (wavelengthGfxMode + 1) % 3;
+			switch(wavelengthGfxMode)
+			{
+			case 0:
+				infoTip = "Wavelength Gfx Mode: Hex";
+				break;
+			case 1:
+				infoTip = "Wavelength Gfx Mode: Decimal (with 30th-bit handling)";
+				break;
+			case 2:
+				infoTip = "Wavelength Gfx Mode: Decimal (no 30th-bit handling)";
+				break;
+			}
+			infoTipPresence = 120;
+			Client::Ref().SetPref("Renderer.WavelengthGfxMode", wavelengthGfxMode);
+		}
+		break;
 	case SDL_SCANCODE_B:
 		if(ctrl)
 			c->SetDecoration();
@@ -2014,6 +2037,22 @@ void GameView::drawHudParticleText(Graphics *g, StringBuilder sbText, int yoffse
 #endif
 }
 
+void GameView::writeWavelength(StringBuilder *str, int wavelengthGfx)
+{
+	switch (wavelengthGfxMode)
+	{
+	case 0:
+		(*str) << "0x" << Format::Uppercase() << Format::Hex() << wavelengthGfx << Format::NoUppercase() << Format::Dec();
+		break;
+	case 1:
+		(*str) << ((wavelengthGfx & 0x10000000) ? -(((~wavelengthGfx) & 0x1FFFFFFF) + 1) : (wavelengthGfx & 0x1FFFFFFF));
+		break;
+	case 2:
+		(*str) << wavelengthGfx;
+		break;
+	}
+}
+
 void GameView::OnDraw()
 {
 	SimulationSample sample = *c->GetSample();
@@ -2267,16 +2306,24 @@ void GameView::OnDraw()
 				{
 					sampleInfo << c->ElementResolve(type, ctype);
 					if (sparticle.tmp>=0 && sparticle.tmp < FILT_NUM_MODES)
-						sampleInfo << " (" << FILT_MODES[sparticle.tmp] << ")";
+						sampleInfo << " (" << FILT_MODES[sparticle.tmp] << ", ";
 					else
-						sampleInfo << " (unknown mode)";
+						sampleInfo << " (unknown mode, ";
+					writeWavelength(&sampleInfo, wavelengthGfx);
+					sampleInfo << ")";
 				}
 				else
 				{
 					sampleInfo << c->ElementResolve(type, ctype);
-					if (wavelengthGfx || type == PT_EMBR || type == PT_PRTI || type == PT_PRTO)
+					if (type == PT_EMBR || type == PT_PRTI || type == PT_PRTO)
 					{
 						// Do nothing, ctype is meaningless for these elements
+					}
+					else if (wavelengthGfx)
+					{
+						sampleInfo << " (";
+						writeWavelength(&sampleInfo, wavelengthGfx);
+						sampleInfo << ")";
 					}
 					// Some elements store extra LIFE info in upper bits of ctype, instead of tmp/tmp2
 					else if (type == PT_CRAY || type == PT_DRAY || type == PT_CONV || type == PT_LDTC)
