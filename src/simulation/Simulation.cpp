@@ -565,6 +565,7 @@ void Simulation::SaveSimOptions(GameSave * gameSave)
 Snapshot * Simulation::CreateSnapshot()
 {
 	Snapshot * snap = new Snapshot();
+	snap->debug_currentParticle = debug_currentParticle;
 	snap->AirPressure.insert(snap->AirPressure.begin(), &pv[0][0], &pv[0][0]+((XRES/CELL)*(YRES/CELL)));
 	snap->AirVelocityX.insert(snap->AirVelocityX.begin(), &vx[0][0], &vx[0][0]+((XRES/CELL)*(YRES/CELL)));
 	snap->AirVelocityY.insert(snap->AirVelocityY.begin(), &vy[0][0], &vy[0][0]+((XRES/CELL)*(YRES/CELL)));
@@ -593,6 +594,8 @@ void Simulation::Restore(const Snapshot & snap)
 	std::fill(elementCount, elementCount+PT_NUM, 0);
 	elementRecount = true;
 	force_stacking_check = true;
+
+	debug_currentParticle = snap.debug_currentParticle;
 
 	std::copy(snap.AirPressure.begin(), snap.AirPressure.end(), &pv[0][0]);
 	std::copy(snap.AirVelocityX.begin(), snap.AirVelocityX.end(), &vx[0][0]);

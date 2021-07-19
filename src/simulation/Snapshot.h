@@ -8,6 +8,8 @@
 class Snapshot
 {
 public:
+	int debug_currentParticle;
+
 	std::vector<float> AirPressure;
 	std::vector<float> AirVelocityX;
 	std::vector<float> AirVelocityY;
@@ -35,6 +37,7 @@ public:
 	Json::Value Authors;
 
 	Snapshot() :
+		debug_currentParticle(0),
 		AirPressure(),
 		AirVelocityX(),
 		AirVelocityY(),
