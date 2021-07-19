@@ -910,22 +910,24 @@ int main(int argc, char * argv[])
 
 		if(arguments["open"].length())
 		{
+			std::string filename = std::string(LOCAL_SAVE_DIR) + std::string(PATH_SEP) + std::string(arguments["open"]) + ".cps";
 #ifdef DEBUG
-			std::cout << "Loading " << arguments["open"] << std::endl;
+			std::cout << "Loading " << filename << std::endl;
 #endif
-			if (Platform::FileExists(arguments["open"]))
+			if (Platform::FileExists(filename))
 			{
 				try
 				{
-					std::vector<unsigned char> gameSaveData = Client::Ref().ReadFile(arguments["open"]);
+					std::vector<unsigned char> gameSaveData = Client::Ref().ReadFile(filename);
 					if (!gameSaveData.size())
 					{
 						new ErrorMessage("Error", "Could not read file");
 					}
 					else
 					{
-						SaveFile * newFile = new SaveFile(arguments["open"]);
+						SaveFile * newFile = new SaveFile(filename);
 						GameSave * newSave = new GameSave(gameSaveData);
+						newFile->SetDisplayName(arguments["open"].FromUtf8());
 						newFile->SetGameSave(newSave);
 						gameController->LoadSaveFile(newFile);
 						delete newFile;
