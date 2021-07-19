@@ -65,6 +65,7 @@ private:
 	User currentUser;
 	float toolStrength;
 	std::deque<Snapshot*> history;
+	bool wasModified;
 	Snapshot *redoHistory;
 	unsigned int historyPosition;
 	unsigned int undoHistoryLimit;
@@ -167,6 +168,9 @@ public:
 	std::vector<Brush*> GetBrushList();
 	int GetBrushID();
 	void SetBrushID(int i);
+
+	bool GetWasModified();
+	void SetWasModified(bool value);
 
 	void SetVote(int direction);
 	SaveInfo * GetSave();

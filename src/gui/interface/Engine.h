@@ -44,7 +44,7 @@ namespace ui
 		inline long unsigned int LastTick() { return lastTick; }
 		inline void LastTick(long unsigned int tick) { lastTick = tick; }
 		void Exit();
-		void ConfirmExit();
+		void ConfirmExit(bool warnUnsavedChanges = false);
 		void Break();
 		void UnBreak();
 

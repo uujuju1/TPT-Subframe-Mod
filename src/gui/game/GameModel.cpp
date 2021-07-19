@@ -42,6 +42,7 @@ GameModel::GameModel():
 	currentFile(NULL),
 	currentUser(0, ""),
 	toolStrength(1.0f),
+	wasModified(false),
 	redoHistory(NULL),
 	historyPosition(0),
 	activeColourPreset(0),
@@ -630,6 +631,16 @@ void GameModel::SetBrushID(int i)
 	notifyBrushChanged();
 }
 
+bool GameModel::GetWasModified()
+{
+	return wasModified;
+}
+
+void GameModel::SetWasModified(bool value)
+{
+	wasModified = value;
+}
+
 void GameModel::AddObserver(GameView * observer){
 	observers.push_back(observer);
 
@@ -837,6 +848,7 @@ void GameModel::SetSaveFile(SaveFile * newSave, bool invertIncludePressure)
 		{
 			Client::Ref().OverwriteAuthorInfo(saveData->authors);
 		}
+		SetWasModified(false);
 	}
 
 	notifySaveChanged();
