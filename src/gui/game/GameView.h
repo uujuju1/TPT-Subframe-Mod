@@ -126,6 +126,8 @@ private:
 
 	void screenshot();
 
+	void drawHudParticleText(Graphics *g, StringBuilder text, int yoffset, int alpha, int wavelengthGfx = 0);
+
 	void enableShiftBehaviour();
 	void disableShiftBehaviour();
 	void enableCtrlBehaviour();

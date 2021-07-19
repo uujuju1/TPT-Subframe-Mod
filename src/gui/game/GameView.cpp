@@ -1969,6 +1969,51 @@ void GameView::SetSaveButtonTooltips()
 		saveSimulationButton->SetToolTips("Re-upload the current simulation", "Upload a new simulation. Hold Ctrl to save offline.");
 }
 
+void GameView::drawHudParticleText(Graphics *g, StringBuilder sbText, int yoffset, int alpha, int wavelengthGfx)
+{
+	String text = sbText.Build();
+	int textWidth = Graphics::textwidth(text);
+	g->fillrect(XRES-20-textWidth, 12 + yoffset, textWidth+8, 13, 0, 0, 0, int(alpha*0.5f));
+	g->drawtext(XRES-16-textWidth, 15 + yoffset, text, 255, 255, 255, int(alpha*0.75f));
+
+#ifndef OGLI
+	if (wavelengthGfx)
+	{
+		int i, cr, cg, cb, j, h = 3, x = XRES-19-textWidth, y = 11+yoffset;
+		int tmp;
+		g->fillrect(x, y, 30, h, 64, 64, 64, alpha); // coords -1 size +1 to work around bug in fillrect - TODO: fix fillrect
+		for (i = 0; i < 30; i++)
+		{
+			if ((wavelengthGfx >> i)&1)
+			{
+				// Need a spread of wavelengths to get a smooth spectrum, 5 bits seems to work reasonably well
+				if (i>2) tmp = 0x1F << (i-2);
+				else tmp = 0x1F >> (2-i);
+
+				cg = 0;
+				cb = 0;
+				cr = 0;
+
+				for (j=0; j<12; j++)
+				{
+					cr += (tmp >> (j+18)) & 1;
+					cb += (tmp >> j) & 1;
+				}
+				for (j=0; j<13; j++)
+					cg += (tmp >> (j+9)) & 1;
+
+				tmp = 624/(cr+cg+cb+1);
+				cr *= tmp;
+				cg *= tmp;
+				cb *= tmp;
+				for (j=0; j<h; j++)
+					g->blendpixel(x+29-i, y+j, cr>255?255:cr, cg>255?255:cg, cb>255?255:cb, alpha);
+			}
+		}
+	}
+#endif
+}
+
 void GameView::OnDraw()
 {
 	SimulationSample sample = *c->GetSample();
@@ -2164,18 +2209,35 @@ void GameView::OnDraw()
 	else if(showHud)
 	{
 		//Draw info about simulation under cursor
-		int wavelengthGfx = 0, alpha = 255;
+		int alpha = 255;
 		if (toolTipPosition.Y < 120)
 			alpha = 255-toolTipPresence*3;
 		if (alpha < 50)
 			alpha = 50;
-		StringBuilder sampleInfo;
-		sampleInfo << Format::Precision(2);
+		int yoffset = 0;
 
-		int type = sample.particle.type;
-		if (type)
+		if (showDebug && sample.SParticleCount > 5)
 		{
-			int ctype = sample.particle.ctype;
+			StringBuilder infoStr;
+			int excessParts = sample.SParticleCount - 5;
+			infoStr << "... " << excessParts << " particle";
+			if (excessParts != 1)
+				infoStr << "s";
+			infoStr << " omitted ...";
+			drawHudParticleText(g, infoStr, yoffset, alpha);
+			yoffset += 13;
+		}
+
+		for (int i = sample.StackIndexEnd - 1; i >= sample.StackIndexBegin; i--)
+		{
+			StringBuilder sampleInfo;
+			sampleInfo << Format::Precision(2);
+
+			int stacki = i - sample.StackIndexBegin;
+			Particle sparticle = sample.SParticles[stacki];
+			int wavelengthGfx = 0;
+			int type = sparticle.type;
+			int ctype = sparticle.ctype;
 
 			if (type == PT_PHOT || type == PT_BIZR || type == PT_BIZRG || type == PT_BIZRS || type == PT_FILT || type == PT_BRAY || type == PT_C5)
 				wavelengthGfx = (ctype&0x3FFFFFFF);
@@ -2188,13 +2250,13 @@ void GameView::OnDraw()
 				}
 				else if ((type == PT_PIPE || type == PT_PPIP) && c->IsValidElement(ctype))
 				{
-					if (ctype == PT_LAVA && c->IsValidElement((int)sample.particle.pavg[1]))
+					if (ctype == PT_LAVA && c->IsValidElement((int)sparticle.pavg[1]))
 					{
-						sampleInfo << c->ElementResolve(type, 0) << " with molten " << c->ElementResolve((int)sample.particle.pavg[1], -1);
+						sampleInfo << c->ElementResolve(type, 0) << " with molten " << c->ElementResolve((int)sparticle.pavg[1], -1);
 					}
 					else
 					{
-						sampleInfo << c->ElementResolve(type, 0) << " with " << c->ElementResolve(ctype, (int)sample.particle.pavg[1]);
+						sampleInfo << c->ElementResolve(type, 0) << " with " << c->ElementResolve(ctype, (int)sparticle.pavg[1]);
 					}
 				}
 				else if (type == PT_LIFE)
@@ -2205,8 +2267,8 @@ void GameView::OnDraw()
 				{
 					sampleInfo << c->ElementResolve(type, ctype);
 					String filtModes[] = {"set colour", "AND", "OR", "subtract colour", "red shift", "blue shift", "no effect", "XOR", "NOT", "old QRTZ scattering", "variable red shift", "variable blue shift"};
-					if (sample.particle.tmp>=0 && sample.particle.tmp<=11)
-						sampleInfo << " (" << filtModes[sample.particle.tmp] << ")";
+					if (sparticle.tmp>=0 && sparticle.tmp<=11)
+						sampleInfo << " (" << filtModes[sparticle.tmp] << ")";
 					else
 						sampleInfo << " (unknown mode)";
 				}
@@ -2221,106 +2283,79 @@ void GameView::OnDraw()
 					else if (type == PT_CRAY || type == PT_DRAY || type == PT_CONV || type == PT_LDTC)
 						sampleInfo << " (" << c->ElementResolve(TYP(ctype), ID(ctype)) << ")";
 					else if (type == PT_CLNE || type == PT_BCLN || type == PT_PCLN || type == PT_PBCN || type == PT_DTEC)
-						sampleInfo << " (" << c->ElementResolve(ctype, sample.particle.tmp) << ")";
+						sampleInfo << " (" << c->ElementResolve(ctype, sparticle.tmp) << ")";
 					else if (c->IsValidElement(ctype) && type != PT_GLOW && type != PT_WIRE && type != PT_SOAP && type != PT_LITH)
 						sampleInfo << " (" << c->ElementResolve(ctype, 0) << ")";
 					else if (ctype)
 						sampleInfo << " (" << ctype << ")";
 				}
-				sampleInfo << ", Temp: " << (sample.particle.temp - 273.15f) << " C";
-				sampleInfo << ", Life: " << sample.particle.life;
-				if (sample.particle.type != PT_RFRG && sample.particle.type != PT_RFGL && sample.particle.type != PT_LIFE)
+				sampleInfo << ", Temp: " << (sparticle.temp - 273.15f) << " C";
+				sampleInfo << ", Life: " << sparticle.life;
+				if (type != PT_RFRG && type != PT_RFGL && type != PT_LIFE)
 				{
-					if (sample.particle.type == PT_CONV)
+					if (type == PT_CONV)
 					{
 						String elemName = c->ElementResolve(
-							TYP(sample.particle.tmp),
-							ID(sample.particle.tmp));
+							TYP(sparticle.tmp),
+							ID(sparticle.tmp));
 						if (elemName == "")
-							sampleInfo << ", Tmp: " << sample.particle.tmp;
+							sampleInfo << ", Tmp: " << sparticle.tmp;
 						else
 							sampleInfo << ", Tmp: " << elemName;
 					}
 					else
-						sampleInfo << ", Tmp: " << sample.particle.tmp;
+						sampleInfo << ", Tmp: " << sparticle.tmp;
 				}
 
 				// only elements that use .tmp2 show it in the debug HUD
 				if (type == PT_CRAY || type == PT_DRAY || type == PT_EXOT || type == PT_LIGH || type == PT_SOAP || type == PT_TRON
 						|| type == PT_VIBR || type == PT_VIRS || type == PT_WARP || type == PT_LCRY || type == PT_CBNW || type == PT_TSNS
 						|| type == PT_DTEC || type == PT_LSNS || type == PT_PSTN || type == PT_LDTC || type == PT_VSNS || type == PT_LITH)
-					sampleInfo << ", Tmp2: " << sample.particle.tmp2;
+					sampleInfo << ", Tmp2: " << sparticle.tmp2;
 
 				sampleInfo << ", Pressure: " << sample.AirPressure;
 			}
 			else
 			{
-				sampleInfo << c->BasicParticleInfo(sample.particle);
-				sampleInfo << ", Temp: " << sample.particle.temp - 273.15f << " C";
+				sampleInfo << c->BasicParticleInfo(sparticle);
+				sampleInfo << ", Temp: " << sparticle.temp - 273.15f << " C";
 				sampleInfo << ", Pressure: " << sample.AirPressure;
 			}
-		}
-		else if (sample.WallType)
-		{
-			sampleInfo << c->WallName(sample.WallType);
-			sampleInfo << ", Pressure: " << sample.AirPressure;
-		}
-		else if (sample.isMouseInSim)
-		{
-			sampleInfo << "Empty, Pressure: " << sample.AirPressure;
-		}
-		else
-		{
-			sampleInfo << "Empty";
+
+			drawHudParticleText(g, sampleInfo, yoffset, alpha, wavelengthGfx);
+			yoffset += 13;
 		}
 
-		int textWidth = Graphics::textwidth(sampleInfo.Build());
-		g->fillrect(XRES-20-textWidth, 12, textWidth+8, 15, 0, 0, 0, int(alpha*0.5f));
-		g->drawtext(XRES-16-textWidth, 16, sampleInfo.Build(), 255, 255, 255, int(alpha*0.75f));
-
-#ifndef OGLI
-		if (wavelengthGfx)
+		if (!sample.SParticleCount)
 		{
-			int i, cr, cg, cb, j, h = 3, x = XRES-19-textWidth, y = 10;
-			int tmp;
-			g->fillrect(x, y, 30, h, 64, 64, 64, alpha); // coords -1 size +1 to work around bug in fillrect - TODO: fix fillrect
-			for (i = 0; i < 30; i++)
+			StringBuilder sampleInfo;
+			sampleInfo << Format::Precision(2);
+
+			if (sample.WallType)
 			{
-				if ((wavelengthGfx >> i)&1)
-				{
-					// Need a spread of wavelengths to get a smooth spectrum, 5 bits seems to work reasonably well
-					if (i>2) tmp = 0x1F << (i-2);
-					else tmp = 0x1F >> (2-i);
-
-					cg = 0;
-					cb = 0;
-					cr = 0;
-
-					for (j=0; j<12; j++)
-					{
-						cr += (tmp >> (j+18)) & 1;
-						cb += (tmp >> j) & 1;
-					}
-					for (j=0; j<13; j++)
-						cg += (tmp >> (j+9)) & 1;
-
-					tmp = 624/(cr+cg+cb+1);
-					cr *= tmp;
-					cg *= tmp;
-					cb *= tmp;
-					for (j=0; j<h; j++)
-						g->blendpixel(x+29-i, y+j, cr>255?255:cr, cg>255?255:cg, cb>255?255:cb, alpha);
-				}
+				sampleInfo << c->WallName(sample.WallType);
+				sampleInfo << ", Pressure: " << sample.AirPressure;
 			}
+			else if (sample.isMouseInSim)
+			{
+				sampleInfo << "Empty, Pressure: " << sample.AirPressure;
+			}
+			else
+			{
+				sampleInfo << "Empty";
+			}
+
+			drawHudParticleText(g, sampleInfo, yoffset, alpha);
+			yoffset += 13;
 		}
-#endif
+
 
 		if (showDebug)
 		{
 			StringBuilder sampleInfo;
 			sampleInfo << Format::Precision(2);
 
-			if (type)
+			if (sample.particle.type)
 				sampleInfo << "#" << sample.ParticleID << ", ";
 
 			sampleInfo << "X:" << sample.PositionX << " Y:" << sample.PositionY;
@@ -2331,9 +2366,7 @@ void GameView::OnDraw()
 			if (c->GetAHeatEnable())
 				sampleInfo << ", AHeat: " << sample.AirTemperature - 273.15f << " C";
 
-			textWidth = Graphics::textwidth(sampleInfo.Build());
-			g->fillrect(XRES-20-textWidth, 27, textWidth+8, 14, 0, 0, 0, int(alpha*0.5f));
-			g->drawtext(XRES-16-textWidth, 30, sampleInfo.Build(), 255, 255, 255, int(alpha*0.75f));
+			drawHudParticleText(g, sampleInfo, yoffset, alpha);
 		}
 	}
 
