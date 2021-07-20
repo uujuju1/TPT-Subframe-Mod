@@ -105,7 +105,7 @@ GameController::GameController():
 	debugInfo.push_back(new DebugParts(0x1, gameModel->GetSimulation()));
 	debugInfo.push_back(new ElementPopulationDebug(0x2, gameModel->GetSimulation()));
 	debugInfo.push_back(new DebugLines(0x4, gameView, this));
-	debugInfo.push_back(new ParticleDebug(0x8, gameModel->GetSimulation(), gameModel));
+	debugInfo.push_back(new ParticleDebug(0x8, gameModel->GetSimulation(), gameModel, this));
 }
 
 GameController::~GameController()
@@ -277,6 +277,7 @@ void GameController::PlaceSave(ui::Point position)
 	if (placeSave)
 	{
 		HistorySnapshot();
+		gameModel->GetSimulation()->needReloadParticleOrder = true;
 		if (!gameModel->GetSimulation()->Load(placeSave, !gameView->ShiftBehaviour(), position.X, position.Y))
 		{
 			gameModel->SetPaused(placeSave->paused | gameModel->GetPaused());
@@ -914,6 +915,15 @@ void GameController::LoadRenderPreset(int presetNum)
 void GameController::Update()
 {
 	Simulation * sim = gameModel->GetSimulation();
+
+	if (!sim->sys_pause || sim->framerender)
+	{
+		if (GetAutoreloadEnabled() && sim->needReloadParticleOrder)
+		{
+			ReloadParticleOrder();
+		}
+	}
+
 	sim->BeforeSim();
 	if (!sim->sys_pause || sim->framerender)
 	{

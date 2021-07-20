@@ -1366,6 +1366,19 @@ int luatpt_setdebug(lua_State* l)
 	return 0;
 }
 
+int luatpt_autoreload_enable(lua_State* l)
+{
+	int acount = lua_gettop(l);
+	if (acount == 0)
+	{
+		lua_pushinteger(l, luacon_controller->GetAutoreloadEnabled());
+		return 1;
+	}
+	int autoreloadstate = luaL_checkint(l, 1);
+	luacon_controller->SetAutoreloadEnabled(autoreloadstate==1);
+	return 0;
+}
+
 int luatpt_setfpscap(lua_State* l)
 {
 	int acount = lua_gettop(l);

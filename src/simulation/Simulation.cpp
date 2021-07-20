@@ -576,6 +576,7 @@ void Simulation::Restore(const Snapshot & snap)
 	force_stacking_check = true;
 
 	debug_currentParticle = snap.debug_currentParticle;
+	needReloadParticleOrder = true;
 
 	std::copy(snap.AirPressure.begin(), snap.AirPressure.end(), &pv[0][0]);
 	std::copy(snap.AirVelocityX.begin(), snap.AirVelocityX.end(), &vx[0][0]);
@@ -1398,6 +1399,7 @@ int Simulation::Tool(int x, int y, int tool, int brushX, int brushY, float stren
 		cpart = &(parts[ID(r)]);
 	else if ((r = photons[y][x]))
 		cpart = &(parts[ID(r)]);
+	needReloadParticleOrder = true;
 	return tools[tool].Perform(this, cpart, x, y, brushX, brushY, strength);
 }
 
@@ -1820,6 +1822,9 @@ int Simulation::CreatePartFlags(int x, int y, int c, int flags)
 	{
 		return 0;
 	}
+
+	if (TYP(c) != PT_SPRK)
+		needReloadParticleOrder = true;
 
 	if (flags & REPLACE_MODE)
 	{
@@ -2297,6 +2302,7 @@ void Simulation::create_arc(int sx, int sy, int dx, int dy, int midpoints, int v
 void Simulation::clear_sim(void)
 {
 	debug_currentParticle = 0;
+	needReloadParticleOrder = false;
 	emp_decor = 0;
 	emp_trigger_count = 0;
 	signs.clear();
@@ -4911,6 +4917,7 @@ void Simulation::ReloadParticleOrder()
 	FixSoapLinks(soapList);
 	parts_lastActiveIndex = NPART-1;
 	RecalcFreeParticles(false);
+	needReloadParticleOrder = false;
 }
 
 void Simulation::SimulateGoL()
@@ -5374,6 +5381,7 @@ Simulation::Simulation():
 	replaceModeSelected(0),
 	replaceModeFlags(0),
 	debug_currentParticle(0),
+	needReloadParticleOrder(false),
 	ISWIRE(0),
 	force_stacking_check(false),
 	emp_decor(0),

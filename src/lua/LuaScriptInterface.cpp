@@ -205,6 +205,7 @@ LuaScriptInterface::LuaScriptInterface(GameController * c, GameModel * m):
 		{"heat", &luatpt_heat},
 		{"setfire", &luatpt_setfire},
 		{"setdebug", &luatpt_setdebug},
+		{"autoreload_enable", &luatpt_autoreload_enable},
 		{"setfpscap",&luatpt_setfpscap},
 		{"getscript",&luatpt_getscript},
 		{"setwindowsize",&luatpt_setwindowsize},
