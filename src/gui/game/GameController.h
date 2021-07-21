@@ -186,6 +186,7 @@ public:
 	bool GetAHeatEnable();
 	void ResetAHeat();
 	void ToggleNewtonianGravity();
+	void ResetStackToolNotifShown();
 
 	bool LoadClipboard();
 	void LoadStamp(GameSave *stamp);

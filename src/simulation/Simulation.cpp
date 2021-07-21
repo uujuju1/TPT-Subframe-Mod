@@ -5405,6 +5405,7 @@ Simulation::~Simulation()
 Simulation::Simulation():
 	replaceModeSelected(0),
 	replaceModeFlags(0),
+	stackToolNotifShown(false),
 	debug_currentParticle(0),
 	needReloadParticleOrder(false),
 	ISWIRE(0),

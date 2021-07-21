@@ -57,6 +57,10 @@ public:
 
 	SimulationSample sample;
 
+	bool stackToolNotifShown;
+	int stackToolNotifShownX;
+	int stackToolNotifShownY;
+
 	char can_move[PT_NUM][PT_NUM];
 	int debug_currentParticle;
 	bool debug_interestingChangeOccurred;
