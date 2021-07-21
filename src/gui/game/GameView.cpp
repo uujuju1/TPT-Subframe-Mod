@@ -2266,9 +2266,8 @@ void GameView::OnDraw()
 				else if (type == PT_FILT)
 				{
 					sampleInfo << c->ElementResolve(type, ctype);
-					String filtModes[] = {"set colour", "AND", "OR", "subtract colour", "red shift", "blue shift", "no effect", "XOR", "NOT", "old QRTZ scattering", "variable red shift", "variable blue shift"};
-					if (sparticle.tmp>=0 && sparticle.tmp<=11)
-						sampleInfo << " (" << filtModes[sparticle.tmp] << ")";
+					if (sparticle.tmp>=0 && sparticle.tmp < FILT_NUM_MODES)
+						sampleInfo << " (" << FILT_MODES[sparticle.tmp] << ")";
 					else
 						sampleInfo << " (unknown mode)";
 				}
@@ -2289,7 +2288,7 @@ void GameView::OnDraw()
 					else if (ctype)
 						sampleInfo << " (" << ctype << ")";
 				}
-				sampleInfo << ", Temp: " << (sparticle.temp - 273.15f) << " C";
+				sampleInfo << ", " << (sparticle.temp - 273.15f) << " C";
 				sampleInfo << ", Life: " << sparticle.life;
 				if (type != PT_RFRG && type != PT_RFGL && type != PT_LIFE)
 				{
@@ -2312,8 +2311,6 @@ void GameView::OnDraw()
 						|| type == PT_VIBR || type == PT_VIRS || type == PT_WARP || type == PT_LCRY || type == PT_CBNW || type == PT_TSNS
 						|| type == PT_DTEC || type == PT_LSNS || type == PT_PSTN || type == PT_LDTC || type == PT_VSNS || type == PT_LITH)
 					sampleInfo << ", Tmp2: " << sparticle.tmp2;
-
-				sampleInfo << ", Pressure: " << sample.AirPressure;
 			}
 			else
 			{
@@ -2334,11 +2331,6 @@ void GameView::OnDraw()
 			if (sample.WallType)
 			{
 				sampleInfo << c->WallName(sample.WallType);
-				sampleInfo << ", Pressure: " << sample.AirPressure;
-			}
-			else if (sample.isMouseInSim)
-			{
-				sampleInfo << "Empty, Pressure: " << sample.AirPressure;
 			}
 			else
 			{
@@ -2358,13 +2350,15 @@ void GameView::OnDraw()
 			if (sample.particle.type)
 				sampleInfo << "#" << sample.ParticleID << ", ";
 
-			sampleInfo << "X:" << sample.PositionX << " Y:" << sample.PositionY;
+			sampleInfo << "(" << sample.PositionX << " " << sample.PositionY << ")";
 
 			if (sample.Gravity)
 				sampleInfo << ", GX: " << sample.GravityVelocityX << " GY: " << sample.GravityVelocityY;
 
 			if (c->GetAHeatEnable())
 				sampleInfo << ", AHeat: " << sample.AirTemperature - 273.15f << " C";
+			if (sample.isMouseInSim)
+				sampleInfo << ", " << sample.AirPressure << " Pa";
 
 			drawHudParticleText(g, sampleInfo, yoffset, alpha);
 		}
@@ -2386,13 +2380,13 @@ void GameView::OnDraw()
 		if (c->GetParticleDebugPosition() != 0)
 			fpsInfo << " [Subf: #" << c->GetParticleDebugPosition() << "]";
 		if (c->GetReplaceModeFlags()&REPLACE_MODE)
-			fpsInfo << " [REPLACE MODE]";
+			fpsInfo << " [Repl]";
 		if (c->GetReplaceModeFlags()&SPECIFIC_DELETE)
-			fpsInfo << " [SPECIFIC DELETE]";
+			fpsInfo << " [Spec Del]";
 		if (ren && ren->GetGridSize())
-			fpsInfo << " [GRID: " << ren->GetGridSize() << "]";
+			fpsInfo << " [Gr: " << ren->GetGridSize() << "]";
 		if (ren && ren->findingElement)
-			fpsInfo << " [FIND]";
+			fpsInfo << " [Find]";
 
 		int textWidth = Graphics::textwidth(fpsInfo.Build());
 		int alpha = 255-introText*5;
