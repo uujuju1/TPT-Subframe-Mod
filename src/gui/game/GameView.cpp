@@ -1487,6 +1487,10 @@ void GameView::OnKeyPress(int key, int scan, bool repeat, bool shift, bool ctrl,
 			buttonTip = "\x0F\xEF\xEF\020Click-and-drag to specify an area to copy (right click = cancel)";
 			buttonTipShow = 120;
 		}
+		else
+		{
+			c->SetActiveTool(0, "DEFAULT_UI_CONFIG");
+		}
 		break;
 	case SDL_SCANCODE_X:
 		if(ctrl)
@@ -2074,6 +2078,7 @@ void GameView::writeWavelength(StringBuilder *str, int wavelengthGfx)
 void GameView::OnDraw()
 {
 	SimulationSample sample = *c->GetSample();
+	ConfigTool * configTool = c->GetActiveConfigTool();
 
 	Graphics * g = GetGraphics();
 	if (ren)
@@ -2135,6 +2140,10 @@ void GameView::OnDraw()
 
 					ren->xor_line(finalCurrentMouse.X-finalBrushRadius.X, finalCurrentMouse.Y-finalBrushRadius.Y+1, finalCurrentMouse.X-finalBrushRadius.X, finalCurrentMouse.Y+finalBrushRadius.Y+CELL-2);
 					ren->xor_line(finalCurrentMouse.X+finalBrushRadius.X+CELL-1, finalCurrentMouse.Y-finalBrushRadius.Y+1, finalCurrentMouse.X+finalBrushRadius.X+CELL-1, finalCurrentMouse.Y+finalBrushRadius.Y+CELL-2);
+				}
+				else if (configTool)
+				{
+					configTool->DrawHUD(ren);
 				}
 				else
 				{
@@ -2281,7 +2290,10 @@ void GameView::OnDraw()
 			sampleInfo << Format::Precision(2);
 
 			int stacki = i - sample.StackIndexBegin;
-			Particle sparticle = sample.SParticles[stacki];
+			bool isConfigToolTarget =
+				configTool && configTool->GetId() == sample.SParticleIDs[stacki];
+			Particle sparticle = isConfigToolTarget ?
+				configTool->GetPart() : sample.SParticles[stacki];
 			int wavelengthGfx = 0;
 			int type = sparticle.type;
 			int ctype = sparticle.ctype;
@@ -2289,8 +2301,14 @@ void GameView::OnDraw()
 			if (type == PT_PHOT || type == PT_BIZR || type == PT_BIZRG || type == PT_BIZRS || type == PT_FILT || type == PT_BRAY || type == PT_C5)
 				wavelengthGfx = (ctype&0x3FFFFFFF);
 
-			if (showDebug)
+			if (showDebug || configTool)
 			{
+				String lbrace = String::Build("["),
+					rbrace = String::Build("]"),
+					noneString = String::Build("");
+
+				if (isConfigToolTarget)
+					sampleInfo << lbrace;
 				if (type == PT_LAVA && c->IsValidElement(ctype))
 				{
 					sampleInfo << "Molten " << c->ElementResolve(ctype, 0);
@@ -2343,29 +2361,58 @@ void GameView::OnDraw()
 					else if (ctype)
 						sampleInfo << " (" << ctype << ")";
 				}
-				sampleInfo << ", " << (sparticle.temp - 273.15f) << " C";
-				sampleInfo << ", Life: " << sparticle.life;
+				if (isConfigToolTarget)
+					sampleInfo << rbrace;
+
+				bool isConfiguringTemp = isConfigToolTarget &&
+					configTool->IsConfiguringTemp();
+				bool isConfiguringLife = isConfigToolTarget &&
+					configTool->IsConfiguringLife();
+				bool isConfiguringTmp = isConfigToolTarget &&
+					configTool->IsConfiguringTmp();
+				bool isConfiguringTmp2 = isConfigToolTarget &&
+					configTool->IsConfiguringTmp2();
+				sampleInfo << ", " <<
+					(isConfiguringTemp ? lbrace : noneString) <<
+					(sparticle.temp - 273.15f) << " C" <<
+					(isConfiguringTemp ? rbrace : noneString);
+				sampleInfo << ", " <<
+					(isConfiguringLife ? lbrace : noneString) <<
+					"Life" <<
+					(isConfiguringLife ? rbrace : noneString) <<
+					": " << sparticle.life;
 				if (type != PT_RFRG && type != PT_RFGL && type != PT_LIFE)
 				{
+					sampleInfo << ", " <<
+						(isConfiguringTmp ? lbrace : noneString) <<
+						"Tmp" <<
+						(isConfiguringTmp ? rbrace : noneString) <<
+						": ";
 					if (type == PT_CONV)
 					{
 						String elemName = c->ElementResolve(
 							TYP(sparticle.tmp),
 							ID(sparticle.tmp));
 						if (elemName == "")
-							sampleInfo << ", Tmp: " << sparticle.tmp;
+							sampleInfo << sparticle.tmp;
 						else
-							sampleInfo << ", Tmp: " << elemName;
+							sampleInfo << elemName;
 					}
 					else
-						sampleInfo << ", Tmp: " << sparticle.tmp;
+						sampleInfo << sparticle.tmp;
 				}
 
 				// only elements that use .tmp2 show it in the debug HUD
 				if (type == PT_CRAY || type == PT_DRAY || type == PT_EXOT || type == PT_LIGH || type == PT_SOAP || type == PT_TRON
 						|| type == PT_VIBR || type == PT_VIRS || type == PT_WARP || type == PT_LCRY || type == PT_CBNW || type == PT_TSNS
 						|| type == PT_DTEC || type == PT_LSNS || type == PT_PSTN || type == PT_LDTC || type == PT_VSNS || type == PT_LITH)
-					sampleInfo << ", Tmp2: " << sparticle.tmp2;
+				{
+					sampleInfo << ", " <<
+						(isConfiguringTmp2 ? lbrace : noneString) <<
+						"Tmp2" <<
+						(isConfiguringTmp2 ? rbrace : noneString) <<
+						": " << sparticle.tmp2;
+				}
 			}
 			else
 			{
@@ -2434,6 +2481,8 @@ void GameView::OnDraw()
 		}
 		if (c->GetParticleDebugPosition() != 0)
 			fpsInfo << " [Subf: #" << c->GetParticleDebugPosition() << "]";
+		if (configTool)
+			fpsInfo << " [Config]";
 		if (c->GetReplaceModeFlags()&REPLACE_MODE)
 			fpsInfo << " [Repl]";
 		if (c->GetReplaceModeFlags()&SPECIFIC_DELETE)

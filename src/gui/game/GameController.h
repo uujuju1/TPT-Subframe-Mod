@@ -10,6 +10,8 @@
 #include "gui/interface/Point.h"
 #include "gui/interface/Colour.h"
 
+#include "gui/game/Tool.h"
+
 #include "simulation/Sign.h"
 #include "simulation/Particle.h"
 #include "simulation/Sample.h"
@@ -127,6 +129,7 @@ public:
 	void SetLastTool(Tool * tool);
 	SimulationSample * GetSample();
 	int GetParticleDebugPosition();
+	ConfigTool * GetActiveConfigTool();
 	int GetReplaceModeFlags();
 	void SetReplaceModeFlags(int flags);
 	void SetActiveColourPreset(int preset);
