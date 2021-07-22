@@ -212,6 +212,7 @@ LuaScriptInterface::LuaScriptInterface(GameController * c, GameModel * m):
 		{"screenshot",&luatpt_screenshot},
 		{"record",&luatpt_record},
 		{"record_subframe",&luatpt_record_subframe},
+		{"setrecordinterval",&luatpt_setrecordinterval},
 		{"element",&luatpt_getelement},
 		{"element_func",&luatpt_element_func},
 		{"graphics_func",&luatpt_graphics_func},

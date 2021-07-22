@@ -1533,4 +1533,19 @@ int luatpt_record_subframe(lua_State* l)
 	return 1;
 }
 
+int luatpt_setrecordinterval(lua_State* l)
+{
+	int acount = lua_gettop(l);
+	if (acount == 0)
+	{
+		lua_pushinteger(l, luacon_controller->GetRecordInterval());
+		return 1;
+	}
+	int recordinterval = luaL_checkint(l, 1);
+	if (recordinterval < 1)
+		return luaL_error(l, "record interval too small");
+	luacon_controller->SetRecordInterval(recordinterval);
+	return 0;
+}
+
 #endif
