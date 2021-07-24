@@ -913,13 +913,6 @@ void GameController::LoadRenderPreset(int presetNum)
 
 void GameController::Update()
 {
-	ui::Point pos = gameView->GetMousePosition();
-	gameModel->GetRenderer()->mousePos = PointTranslate(pos);
-	if (pos.X < XRES && pos.Y < YRES)
-		gameView->SetSample(gameModel->GetSimulation()->GetSample(PointTranslate(pos).X, PointTranslate(pos).Y));
-	else
-		gameView->SetSample(gameModel->GetSimulation()->GetSample(pos.X, pos.Y));
-
 	Simulation * sim = gameModel->GetSimulation();
 	sim->BeforeSim();
 	if (!sim->sys_pause || sim->framerender)
@@ -936,6 +929,13 @@ void GameController::Update()
 				((ParticleDebug*)*iter)->Debug(0xf, 0, 0);
 		}
 	}
+
+	ui::Point pos = gameView->GetMousePosition();
+	gameModel->GetRenderer()->mousePos = PointTranslate(pos);
+	if (pos.X < XRES && pos.Y < YRES)
+		sim->UpdateSample(PointTranslate(pos).X, PointTranslate(pos).Y);
+	else
+		sim->UpdateSample(pos.X, pos.Y);
 
 	//if either STKM or STK2 isn't out, reset it's selected element. Defaults to PT_DUST unless right selected is something else
 	//This won't run if the stickmen dies in a frame, since it respawns instantly
@@ -1166,6 +1166,11 @@ void GameController::SetActiveTool(int toolSelection, ByteString identifier)
 void GameController::SetLastTool(Tool * tool)
 {
 	gameModel->SetLastTool(tool);
+}
+
+SimulationSample * GameController::GetSample()
+{
+	return &gameModel->GetSimulation()->sample;
 }
 
 int GameController::GetReplaceModeFlags()

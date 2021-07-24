@@ -736,9 +736,9 @@ int Simulation::flood_prop(int x, int y, size_t propoffset, PropertyValue propva
 	return did_something;
 }
 
-SimulationSample Simulation::GetSample(int x, int y)
+void Simulation::UpdateSample(int x, int y)
 {
-	SimulationSample sample;
+	sample = SimulationSample();
 	sample.PositionX = x;
 	sample.PositionY = y;
 	if (x >= 0 && x < XRES && y >= 0 && y < YRES)
@@ -773,7 +773,6 @@ SimulationSample Simulation::GetSample(int x, int y)
 		sample.isMouseInSim = false;
 
 	sample.NumParts = NUM_PARTS;
-	return sample;
 }
 
 int Simulation::FloodINST(int x, int y)

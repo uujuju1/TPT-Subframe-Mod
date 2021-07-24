@@ -12,6 +12,7 @@
 
 #include "simulation/Sign.h"
 #include "simulation/Particle.h"
+#include "simulation/Sample.h"
 
 #include "Misc.h"
 
@@ -121,6 +122,7 @@ public:
 	void SetActiveTool(int toolSelection, Tool * tool);
 	void SetActiveTool(int toolSelection, ByteString identifier);
 	void SetLastTool(Tool * tool);
+	SimulationSample * GetSample();
 	int GetReplaceModeFlags();
 	void SetReplaceModeFlags(int flags);
 	void SetActiveColourPreset(int preset);
