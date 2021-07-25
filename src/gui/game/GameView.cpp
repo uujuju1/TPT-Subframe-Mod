@@ -1377,6 +1377,21 @@ void GameView::OnKeyPress(int key, int scan, bool repeat, bool shift, bool ctrl,
 			c->ReloadSim();
 		break;
 	case SDL_SCANCODE_E:
+		if (!ctrl)
+		{
+			if (shift)
+			{
+				int newDepth = c->GetStackEditDepth() - 1;
+				if (newDepth < -1)
+					newDepth = -1;
+				c->SetStackEditDepth(newDepth);
+			}
+			else
+			{
+				c->SetStackEditDepth(c->GetStackEditDepth() + 1);
+			}
+			break;
+		}
 		c->OpenElementSearch();
 		break;
 	case SDL_SCANCODE_F:
@@ -2014,12 +2029,31 @@ void GameView::SetSaveButtonTooltips()
 		saveSimulationButton->SetToolTips("Re-upload the current simulation", "Upload a new simulation. Hold Ctrl to save offline.");
 }
 
-void GameView::drawHudParticleText(Graphics *g, StringBuilder sbText, int yoffset, int alpha, int wavelengthGfx)
+void GameView::drawHudParticleText(Graphics *g, StringBuilder sbText, int yoffset, int alpha, int wavelengthGfx, HudParticleTextGlowType glowType)
 {
 	String text = sbText.Build();
 	int textWidth = Graphics::textwidth(text);
-	g->fillrect(XRES-20-textWidth, 12 + yoffset, textWidth+8, 13, 0, 0, 0, int(alpha*0.5f));
-	g->drawtext(XRES-16-textWidth, 15 + yoffset, text, 255, 255, 255, int(alpha*0.75f));
+	int rectr = 0, rectg = 0, rectb = 0;
+	float alphamod = 1.f;
+	switch (glowType)
+	{
+	case HudParticleTextGlowType::YELLOW:
+		rectr = 0x63;
+		rectg = 0x5d;
+		rectb = 0x31;
+		alphamod = 1.3f;
+		break;
+	case HudParticleTextGlowType::GREEN:
+		rectr = 0x32;
+		rectg = 0x30;
+		rectb = 0x5e;
+		alphamod = 1.3f;
+		break;
+	default:
+		break;
+	}
+	g->fillrect(XRES-20-textWidth, 12 + yoffset, textWidth+8, 13, rectr, rectg, rectb, int(alpha*alphamod*0.5f));
+	g->drawtext(XRES-16-textWidth, 15 + yoffset, text, 255, 255, 255, int(alpha*alphamod*0.75f));
 
 #ifndef OGLI
 	if (wavelengthGfx)
@@ -2272,10 +2306,15 @@ void GameView::OnDraw()
 			alpha = 50;
 		int yoffset = 0;
 
-		if (showDebug && sample.SParticleCount > 5)
+		bool omitBegin = sample.StackIndexBegin != 0;
+		bool omitEnd = sample.StackIndexEnd != sample.SParticleCount;
+		int stackShowBegin = omitBegin ? (sample.StackIndexBegin + 1) : sample.StackIndexBegin;
+		int stackShowEnd = omitEnd ? (sample.StackIndexEnd - 1) : sample.StackIndexEnd;
+
+		if (showDebug && omitEnd)
 		{
 			StringBuilder infoStr;
-			int excessParts = sample.SParticleCount - 5;
+			int excessParts = sample.SParticleCount - stackShowEnd;
 			infoStr << "... " << excessParts << " particle";
 			if (excessParts != 1)
 				infoStr << "s";
@@ -2284,7 +2323,7 @@ void GameView::OnDraw()
 			yoffset += 13;
 		}
 
-		for (int i = sample.StackIndexEnd - 1; i >= sample.StackIndexBegin; i--)
+		for (int i = stackShowEnd - 1; i >= stackShowBegin; i--)
 		{
 			StringBuilder sampleInfo;
 			sampleInfo << Format::Precision(2);
@@ -2307,8 +2346,6 @@ void GameView::OnDraw()
 					rbrace = String::Build("]"),
 					noneString = String::Build("");
 
-				if (isConfigToolTarget)
-					sampleInfo << lbrace;
 				if (type == PT_LAVA && c->IsValidElement(ctype))
 				{
 					sampleInfo << "Molten " << c->ElementResolve(ctype, 0);
@@ -2361,8 +2398,6 @@ void GameView::OnDraw()
 					else if (ctype)
 						sampleInfo << " (" << ctype << ")";
 				}
-				if (isConfigToolTarget)
-					sampleInfo << rbrace;
 
 				bool isConfiguringTemp = isConfigToolTarget &&
 					configTool->IsConfiguringTemp();
@@ -2421,7 +2456,24 @@ void GameView::OnDraw()
 				sampleInfo << ", Pressure: " << sample.AirPressure;
 			}
 
-			drawHudParticleText(g, sampleInfo, yoffset, alpha, wavelengthGfx);
+			HudParticleTextGlowType glowType = HudParticleTextGlowType::NONE;
+			if (c->GetStackEditDepth() >= 0 && i == sample.EffectiveStackEditDepth)
+				glowType = HudParticleTextGlowType::YELLOW;
+			else if (isConfigToolTarget)
+				glowType = HudParticleTextGlowType::GREEN;
+			drawHudParticleText(g, sampleInfo, yoffset, alpha, wavelengthGfx, glowType);
+			yoffset += 13;
+		}
+
+		if (showDebug && omitBegin)
+		{
+			StringBuilder infoStr;
+			int excessParts = stackShowBegin;
+			infoStr << "... " << excessParts << " particle";
+			if (excessParts != 1)
+				infoStr << "s";
+			infoStr << " omitted ...";
+			drawHudParticleText(g, infoStr, yoffset, alpha);
 			yoffset += 13;
 		}
 
@@ -2481,6 +2533,8 @@ void GameView::OnDraw()
 		}
 		if (c->GetParticleDebugPosition() != 0)
 			fpsInfo << " [Subf: #" << c->GetParticleDebugPosition() << "]";
+		if (c->GetStackEditDepth() >= 0)
+			fpsInfo << " [StackE: " << c->GetStackEditDepth() << "]";
 		if (configTool)
 			fpsInfo << " [Config]";
 		if (c->GetReplaceModeFlags()&REPLACE_MODE)

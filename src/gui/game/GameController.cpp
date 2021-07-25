@@ -1238,6 +1238,16 @@ ConfigTool * GameController::GetActiveConfigTool()
 	else return NULL;
 }
 
+int GameController::GetStackEditDepth()
+{
+	return gameModel->GetSimulation()->stackEditDepth;
+}
+
+void GameController::SetStackEditDepth(int depth)
+{
+	gameModel->GetSimulation()->stackEditDepth = depth;
+}
+
 int GameController::GetReplaceModeFlags()
 {
 	return gameModel->GetSimulation()->replaceModeFlags;

@@ -130,6 +130,8 @@ public:
 	SimulationSample * GetSample();
 	int GetParticleDebugPosition();
 	ConfigTool * GetActiveConfigTool();
+	int GetStackEditDepth();
+	void SetStackEditDepth(int depth);
 	int GetReplaceModeFlags();
 	void SetReplaceModeFlags(int flags);
 	void SetActiveColourPreset(int preset);
