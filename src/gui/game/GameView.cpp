@@ -1133,16 +1133,6 @@ void GameView::OnMouseUp(int x, int y, unsigned button)
 						int thumbX = selectPoint2.X - ((placeSaveThumb->Width-placeSaveOffset.X)/2);
 						int thumbY = selectPoint2.Y - ((placeSaveThumb->Height-placeSaveOffset.Y)/2);
 
-						if (thumbX < 0)
-							thumbX = 0;
-						if (thumbX+(placeSaveThumb->Width) >= XRES)
-							thumbX = XRES-placeSaveThumb->Width;
-
-						if (thumbY < 0)
-							thumbY = 0;
-						if (thumbY+(placeSaveThumb->Height) >= YRES)
-							thumbY = YRES-placeSaveThumb->Height;
-
 						c->PlaceSave(ui::Point(thumbX, thumbY));
 					}
 				}
@@ -2156,16 +2146,6 @@ void GameView::OnDraw()
 					int thumbY = selectPoint2.Y - ((placeSaveThumb->Height-placeSaveOffset.Y)/2) + CELL/2;
 
 					ui::Point thumbPos = c->NormaliseBlockCoord(ui::Point(thumbX, thumbY));
-
-					if(thumbPos.X<0)
-						thumbPos.X = 0;
-					if(thumbPos.X+(placeSaveThumb->Width)>=XRES)
-						thumbPos.X = XRES-placeSaveThumb->Width;
-
-					if(thumbPos.Y<0)
-						thumbPos.Y = 0;
-					if(thumbPos.Y+(placeSaveThumb->Height)>=YRES)
-						thumbPos.Y = YRES-placeSaveThumb->Height;
 
 					ren->draw_image(placeSaveThumb, thumbPos.X, thumbPos.Y, 128);
 

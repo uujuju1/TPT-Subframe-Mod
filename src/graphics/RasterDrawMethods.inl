@@ -397,7 +397,7 @@ void PIXELMETHODS_CLASS::clearrect(int x, int y, int w, int h)
 
 void PIXELMETHODS_CLASS::draw_image(pixel *img, int x, int y, int w, int h, int a)
 {
-	int startX = 0;
+	int startX = 0, endX = w;
 	if (!img)
 		return;
 	// Adjust height to prevent drawing off the bottom
@@ -405,7 +405,7 @@ void PIXELMETHODS_CLASS::draw_image(pixel *img, int x, int y, int w, int h, int 
 		h = ((VIDYRES)-y)-1;
 	// Too big
 	if (x + w > VIDXRES)
-		return;
+		endX = VIDXRES - x;
 
 	// Starts off the top of the screen, adjust
 	if (y < 0 && -y < h)
@@ -420,7 +420,7 @@ void PIXELMETHODS_CLASS::draw_image(pixel *img, int x, int y, int w, int h, int 
 		startX = -x;
 	}
 
-	if (!h || y < 0 || !w)
+	if (!h || y < 0 || !w || endX < 0)
 		return;
 	if (a >= 255)
 		for (int j = 0; j < h; j++)
@@ -431,6 +431,7 @@ void PIXELMETHODS_CLASS::draw_image(pixel *img, int x, int y, int w, int h, int 
 				vid[(y+j)*(VIDXRES)+(x+i)] = *img;
 				img++;
 			}
+			img += w - endX;
 		}
 	else
 	{
