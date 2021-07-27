@@ -123,6 +123,7 @@ public:
 	void SetActiveTool(int toolSelection, ByteString identifier);
 	void SetLastTool(Tool * tool);
 	SimulationSample * GetSample();
+	int GetParticleDebugPosition();
 	int GetReplaceModeFlags();
 	void SetReplaceModeFlags(int flags);
 	void SetActiveColourPreset(int preset);

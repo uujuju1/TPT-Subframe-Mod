@@ -2350,6 +2350,8 @@ void GameView::OnDraw()
 			else
 				fpsInfo << " Parts: " << sample.NumParts;
 		}
+		if (c->GetParticleDebugPosition() != 0)
+			fpsInfo << " [Subf: #" << c->GetParticleDebugPosition() << "]";
 		if (c->GetReplaceModeFlags()&REPLACE_MODE)
 			fpsInfo << " [REPLACE MODE]";
 		if (c->GetReplaceModeFlags()&SPECIFIC_DELETE)
