@@ -29,6 +29,7 @@ Property tool changes:
 - (v1.3) "filt:v" in property tool translates into (v<<8) + 125, to aid the configuration of CRAY that creates FILT with a preset tmp.
 - (v1.6) 30th-bit handling. Adding "c:" before typing in a number into the property tool when setting ctype sets the 30th bit. For example, "c:50" sets the ctype to (50 | 0x20000000). Works with hex too -- just add "0x", like in "c:0xC0FFEE". (This used to be "c", but was changed due to collisions with element names.)
 - (v1.11) Properties in property tool are rearranged so that electronic properties are more conveniently accessible when using arrow keys.
+- (v1.12) Property tool stays on the selected property when an invalid value is entered.
 
 HUD changes:
 - Stacked particles are shown in the HUD.
@@ -141,3 +142,6 @@ v1.11:
 - Fix save location on command line open.
 - Fix property tool rect/line bug.
 - Fix interesting change detection not detecting killed particles.
+
+v1.12:
+- Keep property tool on selected property when an invalid value is received.
