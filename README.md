@@ -1,7 +1,7 @@
 The Powder Toy (Subframe Chipmaker Mod)
 =======================================
 
-This is a mod of The Powder Toy for subframe chipmakers. Subframe technology refers to a collection of tricks used to reduce computation cycles in electronic components to a single frame.
+This is a mod of The Powder Toy for subframe chipmakers. Subframe technology refers to a collection of tricks used to reduce computation cycles in eLectronic components to a single frame.
 
 For the full experience, add the lines from [autorun.example.lua](autorun.example.lua) into your autorun.lua.
 
